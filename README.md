@@ -1,121 +1,52 @@
 # 🪐 SolBalance: Delta-Neutral Yield Harvester
 
 ![Solana](https://img.shields.io/badge/Solana-362D59?style=for-the-badge&logo=solana&logoColor=white)
-![Next.js](https://img.shields.io/badge/next.js-%23000000.svg?style=for-the-badge&logo=next.js&logoColor=white)
-![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
 ![Anchor](https://img.shields.io/badge/Anchor-Rust-E34234?style=for-the-badge&logo=rust&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
 
-**SolBalance** is a non-custodial, delta-neutral yield aggregation protocol built natively for the Solana ecosystem. By simultaneously holding long spot positions (via Liquid Staking Tokens like JitoSOL) and executing equivalent short perpetual futures positions (on DEXs like Drift and Zeta), the algorithmic vault guarantees absolute price neutrality.
-
-The protocol purely harvests LST basis yields and short funding rates across multiple Solana perp markets simultaneously—fully automated.
-
----
-
-## 🚀 Key Features
-
-* **Algorithmic Execution (Worker):** Off-chain TypeScript execution bots autonomously fetch market skews to rebalance the portfolio constantly via on-chain smart contracts.
-* **Premium Dashboard Interface:** Built using Next.js 16 App Router and TailwindCSS v4. It features a muted, futuristic "Premium Tech" UI equipped with interactive Recharts, live data feeds, and fully integrated wallet connection endpoints.
-* **Live Solana Price Feed:** Integrates real-time SOL/USD pricing directly into the dashboard header.
-* **Market Skew & Funding Rate Analysis:** Live simulation/visualizations showing protocol exposure across various DEXs (Drift, Zeta, Jupiter, Flash).
-* **Automated Activity Log:** Track precisely when background automated rebalancing and yield harvesting occur right on the front-end dashboard.
+**SolBalance** to autonomiczny, pozbawiony powiernictwa (non-custodial) agregator zysków zbudowany na Solanie. Posiada zintegrowany algorytm on-chain (Anchor Smart Contract) oraz off-chainowy mózg roboczy (The Scout), który zapewnia Delta-Neutralną stymulację kapitału.
 
 ---
 
-## 🏗️ Architecture & Project Structure
+## 🔄 Cykl życia transakcji w Agregatorze
 
-The repository is structured as a complete full-stack environment.
+### Krok 1: Wpłata i Analiza (The Scout)
+Użytkownik wpłaca kapitał do protokołu (np. 1000 USDC).
+Nasz algorytm pracujący w tle (**Scout**) nieustannie skanuje rynek Solany w poszukiwaniu "Skew" (przechyleń rynkowych). Przykładowo:
+- Jupiter: Funding = 25% APR
+- Drift: Funding = **45% APR** (Ekstremalnie dużo zagrań na wzrost/Longów).
+- Zeta: Funding = 30% APR.
+**Decyzja Algorytmu:** Wybieramy Drift. "Ulica" pcha cenę w górę, bardzo potrzebuje kogoś kto otworzy przeciwny zakład (Shorta), dlatego płaci gigantyczny yield.
 
-```
-ArgeSolans/
-├── app/                      # Next.js 16 (App Router) Frontend
-│   ├── about/                # Education & Mechanism breakdown page
-│   ├── components/           # UI Components (DepositCard, Navbar, WalletProvider)
-│   ├── dashboard/            # Core dApp Interface (Charts, KPIs, API fetching)
-│   ├── globals.css           # Global Tailwind CSS definitions (v4)
-│   ├── layout.tsx            # Root HTML layout with Wallet Context
-│   └── page.tsx              # Minimalist Landing Page (Marketing site)
-├── programs/                 # Solana On-Chain Programs
-│   └── solbalance/           # Anchor Framework Smart Contracts (Rust)
-├── worker/                   # Off-chain execution logic (TypeScript)
-│   └── index.ts              # Bots listening to Funding Rates & triggering rebalances
-├── .gitignore                
-├── package.json              # Node dependencies configuration
-├── postcss.config.mjs        # PostCSS (bridge for TailwindCSS v4)
-└── tsconfig.json             # TypeScript configuration
-```
+### Krok 2: Egzekucja Delta-Neutral (The Split)
+Agregator błyskawicznie dzieli te środki na pół, budując idealnie zrównoważoną wagę (Delta = 0).
+- **Noga "LONG" (Spot):** Za 500 USDC kupuje "fizyczną" Solanę uderzając w Jupitera. Zamiast zwykłego SOL używamy LST Caching'u – kupujemy `jitoSOL`, co automatycznie daje zyski ze stakingu (~8%).
+- **Noga "SHORT" (Perp):** Za drugie 500 USDC otwiera bezpieczną pozycję Short na protokole Drift (dźwignia 1x).
 
----
+> **Dlaczego to odporne na krew na rynku (Delta-Neutral)?**
+> Jeśli cena SOL wzrośnie o 10%, noga Long na `jitoSOL` zyskuje 50$. Niestety noga Short na Perpie traci 50$. 
+> Twój wynik cenowy to równe **0$**. Wyeliminowaliśmy wpływ ruchów rynkowych na wycenę kryptowaluty.
 
-## 🛠️ Technology Stack
+### Krok 3: Zbieranie "Nagrody" (The Harvesting)
+Dzięki silnemu zapotrzebowaniu na stabilność sieci na Drifcie (ogrom Longów), co godzinę/epokę nasz serwer inkasuje potężną marżę (Funding Payment) i oddaje ją Shortującym. Inteligentny Kontrakt przeprowadza **Auto-Compounding** w tle – zyski dodawane są do ogólnego balansu jako nagroda.
 
-### Frontend (Client)
-- **Framework:** Next.js (Version 16 - App Router)
-- **Styling:** Tailwind CSS (Version 4.2+ via PostCSS)
-- **UI & Icons:** Lucide-React
-- **Visualization:** Recharts (Interactive Line/Area projections)
-- **Web3 Ecosystem:** `@solana/wallet-adapter-react`, `@solana/web3.js`
-
-### Backend (Smart Contracts & Workers)
-- **On-Chain:** Rust x Anchor Framework (`programs/`)
-- **Off-Chain Engine:** Node.js TypeScript execution bots (`worker/`)
+### Krok 4: Rebalancing (The Brain)
+Rynki to żywy organizm. Nagle Funding na Drifcie opada do 10%, z kolei na protokole Mango wybucha nowa szał-hossa windując stopę do 80% APR. Nasz worker (**Brain**) wykrywa to w 10 sekund. W trybie natychmiastowym zamyka pozycje (Drift) i przenosi obroty za pomocą CPI na drugą stronę płotu (Mango), dbając o wyciskanie z rynku najwyższych zysków w każdej mikrosekundzie bez poślizgu cenowego.
 
 ---
 
-## ⚙️ Setup & Installation
+## 📊 Scenariusze Wygranej Rynkowej (Tabela Payoutów)
 
-Follow these steps to spin up the entire environment locally.
+Z SolBalance omijasz ryzyko kierunku giełdy. Interesuje Cię tylko zmienność stopy popytu na kontrakty Futures.
 
-### 1. Requirements
-- Node.js (v18+)
-- Rust & Cargo
-- Solana CLI
-- Anchor CLI
+| Czego spodziewa się "Ulica"? | Wynik na jitoSOL (Long) | Wynik na Drifcie (Short) | Zysk Agregatora |
+| :--- | :--- | :--- | :--- |
+| **Hossa / Bull Run (+20%)** | +100$ | -100$ | **+ Funding** (Gigantyczny! Longi płacą nagrodę) |
+| **Bessa / Bear Market (-20%)** | -100$ | +100$ | **+ Funding** (Bardzo Niski / Zerowy) |
+| **Boczniak / Consolidation (0%)**| 0$ | 0$ | **+ Funding** (Stabilny dochód pasywny) |
 
-### 2. Clone & Install
-Install the Node dependencies containing both the frontend and worker environment modules.
-```bash
-# Install NPM dependencies
-npm install
+### 🚨 Krytyczne Punkty Zabezpieczeń w Kodzie
+Agregator musi być przygotowany na drastyczne obniżenie optymizmu rynków (głęboką bessę), kiedy ludzie rzucają się na shortowanie Solany ratując kapitał. Wówczas protokół Drift **wymaga zapłaty za utrzymywanie pozycji Short** (Ujemny Funding Rate).
 
-# (Optional) Verify Tailwind CSS modules for v4
-npm install @tailwindcss/postcss --legacy-peer-deps
-```
-
-### 3. Running the Frontend (Next.js Application)
-Start the high-performance local development server.
-```bash
-npm run dev
-```
-Navigate to `http://localhost:3000` in your web browser. 
-
-* **To see the landing page:** Use the root path (`/`).
-* **To open the Wallet & Analytical Dashboard:** Click "Launch App" or navigate directly to `http://localhost:3000/dashboard`.
-
-### 4. Running the Smart Contracts (Anchor)
-Compile the vault program using Anchor. Make sure you have your local Solana test validator running.
-```bash
-cd programs/solbalance
-anchor build
-anchor test
-```
-
-### 5. Starting the Execution Bots (Worker)
-Start the TypeScript off-chain algorithmic worker to monitor simulated or live market shifts and rebalance the portfolio.
-```bash
-cd worker
-npm run start # Adjust based on your TS execution environment
-```
-
----
-
-## ⚠️ Disclaimer & Risk Analysis
-
-The SolBalance smart contracts and automated strategies are highly experimental. While the architecture intends to prevent crypto-asset price exposure (Delta = 0), DeFi mechanisms still pose risks:
-- **Smart Contract Vulnerability Risk:** Exploitation within internal code or composed protocols.
-- **Execution & Liquidation Risk:** Inability of off-chain workers to process rebalancing transactions during times of severe network congestion on Solana.
-- **Negative Funding Risk:** While short positions usually receive funding during bull periods, extreme bearish shifts could cause shorts to pay longs. 
-
-*Not financial advice. Use on testnet and devnet initially to simulate outcomes.*
-
----
-**Crafted with 🖤 for the Solana Ecosystem.**
+Nasz program posiada wbudowaną mechanikę on-chain ucieczki (*Panic Button - Emergency Evacuation*):
+Kiedy zwiadowca off-chain (Scout) dotknie Funding Rate poniżej 0, **Agregator ewakuuje całe środki na powrót poprzez swapy Jupitera**, rozwiązując ubezpieczenia kontraktowe zpowrotem do chłodnego, bezpiecznego zasobu czystego USDC. Zyski i straty zostają zablokowane unikając kosztów.
