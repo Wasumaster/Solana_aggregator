@@ -5,7 +5,7 @@ import DepositCard from '../components/DepositCard';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { ArrowUpRight, ArrowDownRight, Clock, Activity, Zap, ActivitySquare } from 'lucide-react';
 
-// Zmockowane dane: Projektowany zysk
+
 const data1W = [
   { time: 'Mon', balance: 1000 }, { time: 'Tue', balance: 1002 }, { time: 'Wed', balance: 1005 },
   { time: 'Thu', balance: 1004 }, { time: 'Fri', balance: 1008 }, { time: 'Sat', balance: 1011 }, { time: 'Sun', balance: 1015 }
@@ -52,7 +52,7 @@ export default function Dashboard() {
       }
     };
     fetchPrice();
-    const interval = setInterval(fetchPrice, 30000); // 30s
+    const interval = setInterval(fetchPrice, 30000);
     return () => clearInterval(interval);
   }, []);
 

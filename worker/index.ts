@@ -1,22 +1,22 @@
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
-// Mocks for SDKs (In a real environment: @drift-labs/sdk, @jup-ag/core)
+// Mocks for SDKs (Real-world: @drift-labs/sdk, @jup-ag/core)
 // import { DriftClient } from '@drift-labs/sdk';
 // import { Jupiter } from '@jup-ag/core';
 
 const SOLBALANCE_VAULT_PUBKEY = new PublicKey("SoLBaLance1111111111111111111111111111111111");
 
 /**
- * Zmockowane API Giełd Perpetual do testów logicznych Mózgu
+ * Mocked funding rate API for The Brain logic tests
  */
 const mockFetchFundingRates = async () => {
-    // Dynamicznie zmieniane wartości w czasie by symulować warunki
-    const driftLongs = Math.random() > 0.5 ? 45.0 : 10.0; // APR%
+    // Dynamic simulated environment
+    const driftLongs = Math.random() > 0.5 ? 45.0 : 10.0;
     const zetaLongs = 30.0;
     const mangoLongs = Math.random() > 0.8 ? 80.0 : 15.0; 
 
-    // OCHRONA (Emergency Crisis): Sprawdzamy, czy rynek nagle nie stał się skrajnie niedźwiedzi 
-    // tzn. Funding Rate spada poniżej 0 (My musielibyśmy płacić za Shortowania)
-    const marketCrashed = Math.random() > 0.95; // 5% szansy na symulacje kryzysu (bessa)
+    // CRITICAL: Emergency crisis simulation (Deep bear market)
+    // Funding rate turns negative; holding shorts incurs costs
+    const marketCrashed = Math.random() > 0.95; // 5% crisis chance
 
     if (marketCrashed) {
         return { drift: -5.0, zeta: -2.0, mango: -10.0 };
@@ -26,7 +26,7 @@ const mockFetchFundingRates = async () => {
         drift: driftLongs,
         zeta: zetaLongs,
         mango: mangoLongs,
-        jupiter: 25.0 // Platforma referencyjna
+        jupiter: 25.0 // Platform reference baseline
     };
 };
 
@@ -36,55 +36,53 @@ class SolBalanceScoutBot {
     private currentProtocol: string = 'Idle';
 
     constructor() {
-        // [KONFIGURACJA] Łączenie z RPC
         this.connection = new Connection('https://api.mainnet-beta.solana.com');
-        this.scoutWallet = Keypair.generate(); // W produkcji zasilane z process.env.PRIVATE_KEY
-        console.log("🟢 The Scout (Off-Chain Execution Bot) Zainicjalizowany!");
-        console.log(`Portfel Wykonawczy (Crank): ${this.scoutWallet.publicKey.toBase58()}`);
+        this.scoutWallet = Keypair.generate(); // Production relies on process.env.PRIVATE_KEY
+        console.log("🟢 The Scout (Off-Chain Execution Crank) Initialized.");
+        console.log(`Execution Caller: ${this.scoutWallet.publicKey.toBase58()}`);
     }
 
     /**
-     * Główna Pętla Mózgu (The Brain) - Funkcja wywoływana cyklicznie
+     * Core Algorithm Loop (The Brain)
      */
     async executeBrainCycle() {
-        console.log("\n[THE SCOUT] 🔎 Skanowanie rynku w poszukiwaniu rynkowego 'Skew' (Przechylenia)...");
+        console.log("\n[THE SCOUT] 🔎 Scanning Solana ecosystem for market skew...");
 
         try {
             const rates = await mockFetchFundingRates();
-            console.log(`Bieżące stawki fundingu (APR%): Drift: ${rates.drift}%, Zeta: ${rates.zeta}%, Mango: ${rates.mango}%`);
+            console.log(`Current APR%: Drift: ${rates.drift}%, Zeta: ${rates.zeta}%, Mango: ${rates.mango}%`);
 
-            // 1. Zabezpieczenie Awaryjne (KRYTYCZNE)
+            // 1. Emergency Failsafe (CRITICAL ROUTING)
             if (rates.drift < 0 && rates.zeta < 0) {
-                console.error("[EMERGENCY CRITICAL] 🚨 Rynek odwrócony (Ujemny Funding). Szorty generują koszta!");
+                console.error("[EMERGENCY] 🚨 Negative funding detected. Shorts are bleeding equity!");
                 await this.triggerEmergencyEvacuation();
                 return;
             }
 
-            // 2. Znalezienie Najbardziej dochodowego rynku (Highest Yield Target)
+            // 2. Identify highest yield protocol
             let highestYieldProtocol = 'drift';
             let maxYield = rates.drift;
 
             if (rates.zeta > maxYield) { highestYieldProtocol = 'zeta'; maxYield = rates.zeta; }
             if (rates.mango > maxYield) { highestYieldProtocol = 'mango'; maxYield = rates.mango; }
 
-            console.log(`[THE BRAIN] 🧠 Zwycięzca Licytacji: ${highestYieldProtocol.toUpperCase()} (${maxYield}% APR)`);
+            console.log(`[THE BRAIN] 🧠 Highest Yield Target: ${highestYieldProtocol.toUpperCase()} (${maxYield}% APR)`);
 
-            // 3. Logika Decyzyjna: "The Split" vs "Rebalancing"
+            // 3. Execution Pathing
             if (this.currentProtocol === 'Idle') {
                 await this.triggerDeltaNeutralSplit(highestYieldProtocol);
             } 
             else if (this.currentProtocol !== highestYieldProtocol && (maxYield - this.getCurrentProtocolRate(rates, this.currentProtocol) > 10.0)) {
-                // Dokonujemy Rebalance tylko jeżeli nowy protokół oferuje o min. 10% lepszy Yield. (Chroni to przed przepalaniem $$ na fees'y giełd)
-                console.log(`[REBALANCING] Przenoszenie środków z ${this.currentProtocol} do ${highestYieldProtocol} dla optymalizacji.`);
+                // Trigger rebalance only if the >10% yield margin covers expected swap/taker fees
+                console.log(`[REBALANCING] Evacuating ${this.currentProtocol} towards ${highestYieldProtocol} protocol.`);
                 await this.triggerRebalance(highestYieldProtocol);
             } 
             else {
-                // Jeśli nic się nie zmieniło - Zbieramy Żniwa (Harvesting)
                 await this.triggerHarvestingCompounding();
             }
 
         } catch (error) {
-            console.error("Błąd podczas cyklu Mózgu:", error);
+            console.error("Execution cycle failure:", error);
         }
     }
 
@@ -92,42 +90,40 @@ class SolBalanceScoutBot {
         return rates[protocolName.toLowerCase()] || 0;
     }
 
-    /**
-     * EXECUTORY DO SMART CONTRACTU (ANCHOR CPI BUILDERS)
-     */
+    // ===================================
+    // ANCHOR CPI EXECUTORS
+    // ===================================
+
     async triggerDeltaNeutralSplit(targetProtocol: string) {
-        console.log(`[EXECUTION] ⚡ Wysyłanie Atomowej Transakcji do Kontraktu: THE SPLIT na ${windowProtocol(targetProtocol)}...`);
-        // Pseudokod wywołania Anchor Programu (TransactionBuilder):
+        console.log(`[EXECUTION] ⚡ Dispatching atom-split transaction against ${windowProtocol(targetProtocol)}...`);
+        // Anchor transaction builder pseudocode:
         // await program.methods.executeDeltaNeutralSplit(usdcAmountLong, usdcAmountShort)
         //    .accounts({ vault: SOLBALANCE_VAULT_PUBKEY, scoutBot: this.scoutWallet.publicKey, jupiterProgram: JUP_ID, perpDexProgram: DEX_ID }).rpc();
 
         this.currentProtocol = targetProtocol;
-        console.log(`[SUKCES] Pozycja Zablokowana (Delta = 0). Otrzymano jitoSOL (Long) + Wystawiono Shorta.`);
+        console.log(`[SUCCESS] Position Locked (Delta = 0). jitoSOL issued & Short initialized.`);
     }
 
     async triggerHarvestingCompounding() {
-        console.log(`[HARVESTING] 🌾 Zbieranie Funding Rate z ${this.currentProtocol} ...`);
-        // Transakcja oparta o funkcję Anchor `harvest_and_compound()`
-        // Wymusi pobranie zapłaty od Longujących dla Twojego konta. Skutkuje to zjawiskiem Auto-Compounding.
-        console.log(`[SUKCES] Zysk dopisany bezpośrednio do zabezpieczenia Margin (Margin Ratio wzrósł).`);
+        console.log(`[HARVESTING] 🌾 Triggering settlement and auto-compounding on ${this.currentProtocol}...`);
+        // Calls Anchor `harvest_and_compound()`
+        console.log(`[SUCCESS] Interest accrued to collateral margin (Margin ratio elevated).`);
     }
 
     async triggerRebalance(newProtocol: string) {
-        // Transakcja w oparciu o `rebalance_protocol()` - Ewakuuje stare pozycje i otwiera nowe w tym samym ułamku sekundy
-        console.log(`[REBALANCING] Zmiana wagi! Nowy Target -> ${windowProtocol(newProtocol)}`);
+        // Calls `rebalance_protocol()` -> Evacuate old position, split towards new DEX atomicly
+        console.log(`[REBALANCING] Weight adjusted. New Anchor Target -> ${windowProtocol(newProtocol)}`);
         this.currentProtocol = newProtocol;
     }
 
     async triggerEmergencyEvacuation() {
-        console.error(`[EMERGENCY HITTING] Natychmiastowe rozwiązanie pozycji SOL-PERP! Zrzut jitoSOL do czystego USDC.`);
-        // Funkcja Anchor `emergency_evacuation()` z lib.rs
-        // Transakcja usuwające obroty w 1 blok bez liczenia opłat
+        console.error(`[EMERGENCY HIT] Unwinding SOL-PERP positions immediately! Dumping jitoSOL to pure USDC.`);
+        // Calls Anchor `emergency_evacuation()`
         this.currentProtocol = 'Idle';
     }
 
-    // Start
     start() {
-        setInterval(() => this.executeBrainCycle(), 10000); // Skanuj co 10 Sekund
+        setInterval(() => this.executeBrainCycle(), 10000); 
     }
 }
 
@@ -135,6 +131,5 @@ function windowProtocol(p: string) {
     return p.charAt(0).toUpperCase() + p.slice(1);
 }
 
-// Uruchomienie Serwisu
 const bot = new SolBalanceScoutBot();
 bot.start();

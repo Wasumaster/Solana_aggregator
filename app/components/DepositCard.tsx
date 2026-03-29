@@ -10,13 +10,13 @@ export default function DepositCard() {
   const handleDeposit = async () => {
     if (!amount || !connected) return;
     console.log(`Initiating Deposit CPI for ${amount} USDC`);
-    // Anchor Program Interactivity logic
+
   };
 
   const handleWithdraw = async () => {
     if (!amount || !connected) return;
     console.log(`Initiating Withdraw CPI for ${amount} Shares`);
-    // Anchor Program Interactivity logic
+
   };
 
   return (
